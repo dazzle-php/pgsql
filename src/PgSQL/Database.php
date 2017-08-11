@@ -9,6 +9,7 @@ use Dazzle\PgSQL\Support\Transaction\TransactionBox;
 use Dazzle\PgSQL\Support\Transaction\TransactionBoxInterface;
 use Dazzle\Promise\Promise;
 use Dazzle\Promise\PromiseInterface;
+use Dazzle\Socket\Socket;
 use Dazzle\Throwable\Exception\Runtime\ExecutionException;
 
 class Database extends BaseEventEmitter implements DatabaseInterface
@@ -86,6 +87,11 @@ class Database extends BaseEventEmitter implements DatabaseInterface
     protected $transBox;
 
     /**
+     * @var resource
+     */
+    private $stream;
+
+    /**
      * @param LoopInterface $loop
      * @param mixed[] $config
      */
@@ -145,8 +151,19 @@ class Database extends BaseEventEmitter implements DatabaseInterface
         {
             return Promise::doResolve($this);
         }
-        // TODO
-        return Promise::doReject(new ExecutionException('Not yet implemented.'));
+
+        $stream = pg_connect('host=192.168.99.100 port=35432 user=postgres dbname=postgres');
+
+        $this->stream = $stream;
+
+        $this->loop->addReadStream($stream, function () {
+            echo 'read'.PHP_EOL;
+        });
+        $this->loop->addWriteStream($stream, function () {
+            echo 'write'.PHP_EOL;
+        });
+
+        return Promise::doResolve($stream);
     }
 
     /**
@@ -206,8 +223,7 @@ class Database extends BaseEventEmitter implements DatabaseInterface
      */
     public function query($sql, $sqlParams = [])
     {
-        // TODO
-        return Promise::doReject(new ExecutionException('Not yet implemented.'));
+        return Promise::doResolve(pg_query_params($sql, $sqlParams));
     }
 
     /**
@@ -216,9 +232,8 @@ class Database extends BaseEventEmitter implements DatabaseInterface
      */
     public function execute($sql, $sqlParams = [])
     {
-        // TODO
-        return $this->query($sql, $sqlParams)->then(function($command) {
-            return $command->affectedRows;
+        return $this->query($sql, $sqlParams)->then(function($ret) {
+            return pg_fetch_row($ret);
         });
     }
 
@@ -228,8 +243,7 @@ class Database extends BaseEventEmitter implements DatabaseInterface
      */
     public function ping()
     {
-        // TODO
-        return Promise::doReject(new ExecutionException('Not yet implemented.'));
+        return Promise::doResolve(pg_ping($this->stream));
     }
 
     /**
