@@ -7,9 +7,9 @@ use Dazzle\Loop\LoopAwareTrait;
 use Dazzle\Loop\LoopInterface;
 use Dazzle\PgSQL\Support\Transaction\TransactionBox;
 use Dazzle\PgSQL\Support\Transaction\TransactionBoxInterface;
+use Dazzle\Promise\Deferred;
 use Dazzle\Promise\Promise;
 use Dazzle\Promise\PromiseInterface;
-use Dazzle\Socket\Socket;
 use Dazzle\Throwable\Exception\Runtime\ExecutionException;
 
 class Database extends BaseEventEmitter implements DatabaseInterface
@@ -82,6 +82,13 @@ class Database extends BaseEventEmitter implements DatabaseInterface
     protected $queue;
 
     /**
+     * @var Deferred
+     */
+    protected $conn;
+
+    protected $readSock;
+
+    /**
      * @var TransactionBoxInterface
      */
     protected $transBox;
@@ -99,6 +106,7 @@ class Database extends BaseEventEmitter implements DatabaseInterface
     {
         $this->loop = $loop;
         $this->config = $this->createConfig($config);
+        $this->stream = pg_connect($this->config, \PGSQL_CONNECT_ASYNC|\PGSQL_CONNECT_FORCE_NEW);
         $this->serverInfo = [];
         $this->state = self::STATE_INIT;
         $this->transBox = $this->createTransactionBox();
@@ -149,21 +157,26 @@ class Database extends BaseEventEmitter implements DatabaseInterface
     {
         if ($this->isStarted())
         {
-            return Promise::doResolve($this);
+            return Promise::doResolve($this->conn);
         }
+        $this->state = self::STATE_CONNECT_PENDING;
+        $deferred = new Deferred();
+        $promise = $deferred->getPromise();
+        $this->conn = $deferred;
+        $this->readSock = $this->conn;
+        if (!$this->stream) {
+            throw new \Exception();
+        }
+        if (!($sock = \pg_socket($this->stream))) {
+            throw new \Exception();
+        }
+        if (pg_connection_status($this->stream) == \PGSQL_CONNECTION_BAD) {
+            throw new \Exception();
+        }
+        $this->loop->addReadStream($sock, [$this, 'asyncConnProcedure']);
+        $this->loop->addWriteStream($sock, [$this, 'asyncConnProcedure']);
 
-        $stream = pg_connect('host=192.168.99.100 port=35432 user=postgres dbname=postgres');
-
-        $this->stream = $stream;
-
-        $this->loop->addReadStream($stream, function () {
-            echo 'read'.PHP_EOL;
-        });
-        $this->loop->addWriteStream($stream, function () {
-            echo 'write'.PHP_EOL;
-        });
-
-        return Promise::doResolve($stream);
+        return $promise;
     }
 
     /**
@@ -204,7 +217,6 @@ class Database extends BaseEventEmitter implements DatabaseInterface
      */
     public function setDatabase($dbname)
     {
-        // TODO
         return $this->query(sprintf('USE `%s`', $dbname));
     }
 
@@ -214,7 +226,7 @@ class Database extends BaseEventEmitter implements DatabaseInterface
      */
     public function getDatabase()
     {
-        // TODO
+        return pg_dbname($this->stream);
     }
 
     /**
@@ -223,7 +235,12 @@ class Database extends BaseEventEmitter implements DatabaseInterface
      */
     public function query($sql, $sqlParams = [])
     {
-        return Promise::doResolve(pg_query_params($sql, $sqlParams));
+        $query = new Deferred();
+        $promise = $query->getPromise();
+        //TODO: $query should be a QueryCommand object
+        $this->queue[] = $query;
+
+        return $promise;
     }
 
     /**
@@ -232,9 +249,12 @@ class Database extends BaseEventEmitter implements DatabaseInterface
      */
     public function execute($sql, $sqlParams = [])
     {
-        return $this->query($sql, $sqlParams)->then(function($ret) {
-            return pg_fetch_row($ret);
-        });
+        $exec = new Deferred();
+        $promise = $exec->getPromise();
+        //TODO: $exec should be a ExecCommand object
+        $this->queue[] = $exec;
+
+        return $promise;
     }
 
     /**
@@ -321,11 +341,51 @@ class Database extends BaseEventEmitter implements DatabaseInterface
     protected function createConfig($config = [])
     {
         $default = [
-            'endpoint' => 'tcp://127.0.0.1:5432',
+            'host' => 'tcp://127.0.0.1:5432',
             'user'     => 'root',
-            'pass'     => '',
+            'password'     => '',
             'dbname'   => '',
         ];
-        return array_merge($default, $config);
+        $config = array_merge($default, $config);
+        foreach ($config as $key => &$value) {
+            if (!$value) {
+                unset($config[$key]);
+                continue;
+            }
+            $value = "$key=$value";
+        }
+
+        return implode(' ', $config);
+    }
+
+    public function asyncConnProcedure()
+    {
+        switch (\pg_connect_poll($this->stream)) {
+            case \PGSQL_POLLING_FAILED:
+                return;
+            case \PGSQL_POLLING_OK:
+                if ($this->state < self::STATE_CONNECT_SUCCEEDED) {
+                    $this->state = self::STATE_CONNECT_SUCCEEDED;
+                    $this->conn->resolve($this->stream);
+                } else {
+                    echo 'do';
+                    $ret = pg_get_result($this->stream);
+                    switch (pg_result_status($ret, \PGSQL_STATUS_LONG)) {
+                        case PGSQL_TUPLES_OK:
+                            //TODO:
+                        case PGSQL_COMMAND_OK:
+                            //TODO:
+                        case PGSQL_EMPTY_QUERY:
+                            //TODO:
+                    }
+                    die;
+                }
+                return;
+            case \PGSQL_POLLING_ACTIVE:
+                return;
+
+            default:
+                return;
+        }
     }
 }

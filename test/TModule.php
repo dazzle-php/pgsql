@@ -6,6 +6,7 @@ use Dazzle\Loop\Model\SelectLoop;
 use Dazzle\Loop\Loop;
 use Dazzle\Loop\LoopExtendedInterface;
 use Dazzle\Loop\LoopInterface;
+use Dazzle\PgSQL\Database;
 use Dazzle\PgSQL\Test\_Simulation\Event;
 use Dazzle\PgSQL\Test\_Simulation\Simulation;
 use Exception;
@@ -156,5 +157,22 @@ class TModule extends TUnit
                 sprintf(self::MSG_EVENT_DATA_ASSERTION_FAILED, $i)
             );
         }
+    }
+
+    /**
+     * @return array
+     */
+    public function DbProvider()
+    {
+        $config = [
+            'host' => $_ENV['host']?:'tcp://127.0.0.1',
+            'user' => $_ENV['user']?:'root',
+            'dbname' => $_ENV['db']?:'',
+            'port' => $_ENV['port']?:5432,
+        ];
+
+        return [
+            [new Database($this->getLoop(), $config)]
+        ];
     }
 }
