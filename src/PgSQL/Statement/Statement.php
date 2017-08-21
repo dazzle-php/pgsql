@@ -2,10 +2,10 @@
 
 class Statement implements QueryStatement
 {
-    public function __construct($sql, array $param = [])
+    public function __construct($sql, array $params = [])
     {
         $this->sql = $sql;
-        $this->param = $param;
+        $this->params = $params;
         $this->name = $this->generateName();
     }
 
@@ -17,6 +17,11 @@ class Statement implements QueryStatement
     public function getSQL()
     {
         return $this->sql;
+    }
+
+    public function getParams()
+    {
+        return $this->params;
     }
 
     private function generateName($length = 6)

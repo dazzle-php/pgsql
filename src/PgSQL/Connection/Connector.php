@@ -1,6 +1,6 @@
 <?php
 
-namespace Dazzle\PgSQL\Support\Connection;
+namespace Dazzle\PgSQL\Connection;
 
 
 interface ConnectorInterface
@@ -17,21 +17,16 @@ interface ConnectorInterface
     /**
      * Execute an async query and return number of affected rows.
      *
-     * @param string $sql
-     * @param mixed[] $sqlParams
+     * @param \QueryStatement $stmt
      * @return PromiseInterface
      */
-    public function execute($sql, $sqlParams = []);
-
-    /**
-     * Get readonly sock for watching
-     * @return mixed
-     */
-    public function getSock();
+    public function execute(\QueryStatement $stmt);
 
     /**
      * Get connection resource
      * @return mixed
      */
     public function getStream();
+
+    public function connect();
 }

@@ -5,6 +5,8 @@ namespace Dazzle\PgSQL;
 use Dazzle\Event\BaseEventEmitter;
 use Dazzle\Loop\LoopAwareTrait;
 use Dazzle\Loop\LoopInterface;
+use Dazzle\PgSQL\Connection\AsyncConnector;
+use Dazzle\PgSQL\Connection\Connection;
 use Dazzle\PgSQL\Transaction\TransactionBox;
 use Dazzle\PgSQL\Transaction\TransactionBoxInterface;
 use Dazzle\Promise\Deferred;
@@ -107,10 +109,11 @@ class Database extends BaseEventEmitter implements DatabaseInterface
     {
         $this->loop = $loop;
         $this->config = $this->createConfig($config);
+        $this->conn = new Connection(new AsyncConnector());
         $this->stream = pg_connect($this->config, \PGSQL_CONNECT_ASYNC|\PGSQL_CONNECT_FORCE_NEW);
         $this->serverInfo = [];
         $this->state = self::STATE_INIT;
-        $this->transBox = $this->createTransactionBox();
+//        $this->transBox = $this->createTransactionBox();
     }
 
     /**

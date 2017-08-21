@@ -1,26 +1,35 @@
 <?php
 
-namespace Dazzle\PgSQL\Support\Connection;
+namespace Dazzle\PgSQL\Connection;
 
 
 use Dazzle\Promise\Deferred;
 
 class Connection extends Deferred implements ConnectionInterface
 {
-    public function __construct(ConnectorInterface $conn, $canceller = null)
+    protected $connector;
+
+    public function __construct(ConnectorInterface $connector, $canceller = null)
     {
         parent::__construct($canceller);
-        $this->conn = $conn;
+        $this->connector = $connector;
+    }
+
+    public function getConnector()
+    {
+        return $this->connector;
     }
 
     public function query($sql, $params = [])
     {
-        return $this->conn->query($sql, $params);
+        return $this->connector->query($sql, $params);
     }
 
     public function execute($sql, $params = [])
     {
-        return $this->conn->execute($sql, $params);
+        $stmt = new \Statement($sql, $params);
+
+        return $this->connector->execute($stmt);
     }
 
     /**

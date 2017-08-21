@@ -1,6 +1,6 @@
 <?php
 
-namespace Dazzle\PgSQL\Support\Connection;
+namespace Dazzle\PgSQL\Connection;
 
 
 interface ConnectionInterface
