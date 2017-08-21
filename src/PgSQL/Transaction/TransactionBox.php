@@ -1,6 +1,6 @@
 <?php
 
-namespace Dazzle\PgSQL\Support\Transaction;
+namespace Dazzle\PgSQL\Transaction;
 
 use Dazzle\PgSQL\TransactionInterface;
 use SplObjectStorage;

@@ -5,11 +5,12 @@ namespace Dazzle\PgSQL;
 use Dazzle\Event\BaseEventEmitter;
 use Dazzle\Loop\LoopAwareTrait;
 use Dazzle\Loop\LoopInterface;
-use Dazzle\PgSQL\Support\Transaction\TransactionBox;
-use Dazzle\PgSQL\Support\Transaction\TransactionBoxInterface;
+use Dazzle\PgSQL\Transaction\TransactionBox;
+use Dazzle\PgSQL\Transaction\TransactionBoxInterface;
 use Dazzle\Promise\Deferred;
 use Dazzle\Promise\Promise;
 use Dazzle\Promise\PromiseInterface;
+use Dazzle\Throwable\Exception;
 use Dazzle\Throwable\Exception\Runtime\ExecutionException;
 
 class Database extends BaseEventEmitter implements DatabaseInterface
@@ -368,17 +369,30 @@ class Database extends BaseEventEmitter implements DatabaseInterface
                     $this->state = self::STATE_CONNECT_SUCCEEDED;
                     $this->conn->resolve($this->stream);
                 } else {
-                    echo 'do';
                     $ret = pg_get_result($this->stream);
-                    switch (pg_result_status($ret, \PGSQL_STATUS_LONG)) {
-                        case PGSQL_TUPLES_OK:
-                            //TODO:
-                        case PGSQL_COMMAND_OK:
-                            //TODO:
-                        case PGSQL_EMPTY_QUERY:
-                            //TODO:
+                    if ($ret != false) {
+                        $stat = pg_result_status($ret, \PGSQL_STATUS_LONG);
+                        switch ($stat) {
+                            case PGSQL_TUPLES_OK:
+                                //TODO:
+                                var_dump(pg_fetch_row($ret));
+                                break;
+                            case PGSQL_COMMAND_OK:
+                                //TODO:
+                                var_export(pg_affected_rows($ret));
+                                break;
+                            case PGSQL_EMPTY_QUERY:
+                                break;
+                            case PGSQL_BAD_RESPONSE:
+                            case PGSQL_NONFATAL_ERROR:
+                            case PGSQL_FATAL_ERROR:
+                                throw new Exception(pg_last_error($this->stream));
+                                break;
+                            default:
+                                break;
+                        }
+                        die;
                     }
-                    die;
                 }
                 return;
             case \PGSQL_POLLING_ACTIVE:

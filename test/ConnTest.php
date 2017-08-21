@@ -6,7 +6,6 @@ require_once __DIR__.'/../vendor/autoload.php';
 use Dazzle\Loop\Loop;
 use Dazzle\Loop\Model\SelectLoop;
 use Dazzle\Throwable\Test\TModule;
-use Dazzle\PgSQL\Support\Connection\Connection;
 use Dazzle\PgSQL\Database;
 
 class ConnTest extends TModule
@@ -30,8 +29,7 @@ $db = new Database($loop, [
 ]);
 
 $db->start()->then(function ($conn) use ($loop) {
-    $send = pg_send_query($conn, 'select \'ok\'');
-    var_dump($send);
+    $send = pg_send_query($conn, 'insert into demo DEFAULT VALUES');
 })->then(function () use ($loop) {
 //    $loop->stop();
 });
