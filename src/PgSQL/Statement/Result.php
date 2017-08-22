@@ -2,10 +2,10 @@
 
 namespace Dazzle\PgSQL\Statement;
 
-use Dazzle\Promise\Deferred;
-
 class Result implements CommandResultStatement,TupleResultStatement,ResultStatement
 {
+    protected $result;
+
     public function __construct($ret)
     {
         $this->result = $ret;
@@ -13,42 +13,41 @@ class Result implements CommandResultStatement,TupleResultStatement,ResultStatem
 
     public function getAffectedRows()
     {
-        // TODO: Implement getAffectedRows() method.
+        return \pg_affected_rows($this->result);
     }
 
     public function getLastId()
     {
-        // TODO: Implement getLastId() method.
+        return \pg_last_oid($this->result);
     }
 
-    public function fetchColumn()
+    public function fetchColumn($filed = '')
     {
-        // TODO: Implement fetchColumn() method.
+        return \pg_fetch_result($this->result, 0, $filed);
     }
 
-    public function fetchRow()
+    public function fetchRow($filed = '')
     {
-        return \pg_fetch_row($this->result);
+        return \pg_fetch_row($this->result, 0);
     }
 
     public function fetchAll()
     {
-        // TODO: Implement fetchAll() method.
+        return \pg_fetch_all($this->result);
     }
 
     public function fetchAssoc()
     {
-        // TODO: Implement fetchAssoc() method.
+        return \pg_fetch_assoc($this->result);
     }
 
     public function fetchObject()
     {
-        // TODO: Implement fetchObject() method.
+        return \pg_fetch_object($this->result);
     }
 
     public function getStatus()
     {
-        // TODO: Implement getStatus() method.
+        return \pg_result_status($this->result);
     }
-
 }

@@ -3,6 +3,7 @@
 namespace Dazzle\PgSQL\Connection;
 
 use Dazzle\PgSQL\Statement\QueryStatement;
+use Dazzle\Promise\PromiseInterface;
 
 interface ConnectorInterface
 {
