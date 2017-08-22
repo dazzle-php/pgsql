@@ -1,10 +1,14 @@
 <?php
 
+namespace Dazzle\PgSQL\Statement;
+
+use Dazzle\Promise\Deferred;
+
 class Result implements CommandResultStatement,TupleResultStatement,ResultStatement
 {
-    public function __construct($pgSqlRet)
+    public function __construct($ret)
     {
-        $this->result = $pgSqlRet;
+        $this->result = $ret;
     }
 
     public function getAffectedRows()
@@ -24,7 +28,7 @@ class Result implements CommandResultStatement,TupleResultStatement,ResultStatem
 
     public function fetchRow()
     {
-        // TODO: Implement fetchRow() method.
+        return \pg_fetch_row($this->result);
     }
 
     public function fetchAll()

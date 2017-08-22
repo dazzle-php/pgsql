@@ -5,6 +5,8 @@ require_once __DIR__.'/../vendor/autoload.php';
 
 use Dazzle\Loop\Loop;
 use Dazzle\Loop\Model\SelectLoop;
+use Dazzle\PgSQL\Connection\Connection;
+use Dazzle\PgSQL\Statement\Result;
 use Dazzle\Throwable\Test\TModule;
 use Dazzle\PgSQL\Database;
 
@@ -28,10 +30,12 @@ $db = new Database($loop, [
     'dbname' => 'postgres'
 ]);
 
-$db->start()->then(function ($conn) use ($loop) {
-    $send = pg_send_query($conn, 'insert into demo DEFAULT VALUES');
-})->then(function () use ($loop) {
-//    $loop->stop();
+$db->start()
+->then(function (Connection $conn) use ($loop) {
+    $conn->query('select \'ok\'')->then(function (Result $ret) use ($loop) {
+        print_r($ret->fetchRow());
+        $loop->stop();
+    });
 });
 
 $loop->start();

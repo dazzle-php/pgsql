@@ -5,7 +5,7 @@ namespace Dazzle\PgSQL;
 use Dazzle\Event\BaseEventEmitter;
 use Dazzle\Loop\LoopAwareTrait;
 use Dazzle\Loop\LoopInterface;
-use Dazzle\PgSQL\Connection\AsyncConnector;
+use Dazzle\PgSQL\Connection\Connector;
 use Dazzle\PgSQL\Connection\Connection;
 use Dazzle\PgSQL\Transaction\TransactionBox;
 use Dazzle\PgSQL\Transaction\TransactionBoxInterface;
@@ -85,7 +85,7 @@ class Database extends BaseEventEmitter implements DatabaseInterface
     protected $queue;
 
     /**
-     * @var Deferred
+     * @var Connector
      */
     protected $conn;
 
@@ -109,9 +109,7 @@ class Database extends BaseEventEmitter implements DatabaseInterface
     {
         $this->loop = $loop;
         $this->config = $this->createConfig($config);
-//        $this->conn = new Connection(new AsyncConnector());
-        $this->stream = pg_connect($this->config, \PGSQL_CONNECT_ASYNC|\PGSQL_CONNECT_FORCE_NEW);
-        $this->serverInfo = [];
+        $this->conn = new Connector($this->config);
         $this->state = self::STATE_INIT;
 //        $this->transBox = $this->createTransactionBox();
     }
@@ -164,21 +162,12 @@ class Database extends BaseEventEmitter implements DatabaseInterface
             return Promise::doResolve($this->conn);
         }
         $this->state = self::STATE_CONNECT_PENDING;
-        $deferred = new Deferred();
-        $promise = $deferred->getPromise();
-        $this->conn = $deferred;
-        $this->readSock = $this->conn;
-        if (!$this->stream) {
+        $promise = $this->conn->getConnection();
+        if (!($sock = $this->conn->getSock())) {
             throw new \Exception();
         }
-        if (!($sock = \pg_socket($this->stream))) {
-            throw new \Exception();
-        }
-        if (pg_connection_status($this->stream) == \PGSQL_CONNECTION_BAD) {
-            throw new \Exception();
-        }
-        $this->loop->addReadStream($sock, [$this, 'asyncConnProcedure']);
-        $this->loop->addWriteStream($sock, [$this, 'asyncConnProcedure']);
+        $this->loop->addReadStream($sock, [$this->conn, 'connect']);
+        $this->loop->addWriteStream($sock, [$this->conn, 'connect']);
 
         return $promise;
     }

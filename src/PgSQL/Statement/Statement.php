@@ -1,12 +1,10 @@
 <?php
+namespace Dazzle\PgSQL\Statement;
 
-use Dazzle\Promise\Deferred;
-
-class Statement extends Deferred implements QueryStatement
+class Statement implements QueryStatement
 {
-    public function __construct($sql, array $params = [], $canceller = null)
+    public function __construct($sql, array $params = [])
     {
-        parent::__construct($canceller);
         $this->sql = $sql;
         $this->params = $params;
         $this->name = $this->generateName();
