@@ -1,9 +1,12 @@
 <?php
 
-class Statement implements QueryStatement
+use Dazzle\Promise\Deferred;
+
+class Statement extends Deferred implements QueryStatement
 {
-    public function __construct($sql, array $params = [])
+    public function __construct($sql, array $params = [], $canceller = null)
     {
+        parent::__construct($canceller);
         $this->sql = $sql;
         $this->params = $params;
         $this->name = $this->generateName();

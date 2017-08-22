@@ -4,6 +4,9 @@ namespace Dazzle\PgSQL\Connection;
 
 use Dazzle\Promise\Deferred;
 use Dazzle\Promise\Promise;
+use Dazzle\PgSQL\Connection\ConnectorInterface;
+use Dazzle\Throwable\Exception;
+use Statement;
 
 class AsyncConnector implements ConnectorInterface
 {
@@ -33,12 +36,10 @@ class AsyncConnector implements ConnectorInterface
      */
     public function query($sql, $sqlParams = [])
     {
-        $promise = new Promise(function () use ($sql, $sqlParams) {
-            return $this->asyncQuery($sql, $sqlParams);
-        });
-        $this->queryQueue[] = $promise;
+        $queryStmt = new Statement($sql, $sqlParams);
+        $this->queryQueue[] = $queryStmt;
 
-        return $promise;
+        return $queryStmt->getPromise();
     }
 
     /**
@@ -78,15 +79,18 @@ class AsyncConnector implements ConnectorInterface
                     if ($ret != false) {
                         $stat = pg_result_status($ret, \PGSQL_STATUS_LONG);
                         switch ($stat) {
-                            case PGSQL_TUPLES_OK:
-                                //TODO:
-                                var_dump(pg_fetch_row($ret));
+                            case PGSQL_EMPTY_QUERY:
+                                $queryStmt = array_shift($this->queryQueue);
+                                if (!\pg_send_query_params($this->stream,
+                                    $queryStmt->getSQL(), $queryStmt->getParams())) {
+                                    $queryStmt->reject();
+                                }
                                 break;
                             case PGSQL_COMMAND_OK:
+                            case PGSQL_TUPLES_OK:
+                                $result = array_shift($this->retQueue);
+                                $result->resolve($ret);
                                 //TODO:
-                                var_export(pg_affected_rows($ret));
-                                break;
-                            case PGSQL_EMPTY_QUERY:
                                 break;
                             case PGSQL_BAD_RESPONSE:
                             case PGSQL_NONFATAL_ERROR:

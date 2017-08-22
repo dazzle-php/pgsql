@@ -109,7 +109,7 @@ class Database extends BaseEventEmitter implements DatabaseInterface
     {
         $this->loop = $loop;
         $this->config = $this->createConfig($config);
-        $this->conn = new Connection(new AsyncConnector());
+//        $this->conn = new Connection(new AsyncConnector());
         $this->stream = pg_connect($this->config, \PGSQL_CONNECT_ASYNC|\PGSQL_CONNECT_FORCE_NEW);
         $this->serverInfo = [];
         $this->state = self::STATE_INIT;
