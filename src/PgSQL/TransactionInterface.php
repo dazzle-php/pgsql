@@ -4,7 +4,7 @@ namespace Dazzle\PgSQL;
 
 use Dazzle\Event\EventEmitterInterface;
 
-interface TransactionInterface extends SQLClientInterface, EventEmitterInterface
+interface TransactionInterface extends EventEmitterInterface
 {
     public function isOpen();
 

@@ -6,12 +6,7 @@ use Dazzle\Event\BaseEventEmitter;
 use Dazzle\Loop\LoopAwareTrait;
 use Dazzle\Loop\LoopInterface;
 use Dazzle\PgSQL\Connection\Connector;
-use Dazzle\PgSQL\Connection\Connection;
-use Dazzle\PgSQL\Transaction\TransactionBox;
-use Dazzle\PgSQL\Transaction\TransactionBoxInterface;
-use Dazzle\Promise\Deferred;
 use Dazzle\Promise\Promise;
-use Dazzle\Promise\PromiseInterface;
 use Dazzle\Throwable\Exception;
 use Dazzle\Throwable\Exception\Runtime\ExecutionException;
 
@@ -70,36 +65,14 @@ class Database extends BaseEventEmitter implements DatabaseInterface
     protected $config;
 
     /**
-     * @var mixed[]
-     */
-    protected $serverInfo;
-
-    /**
      * @var int
      */
     protected $state;
 
     /**
-     * @var
-     */
-    protected $queue;
-
-    /**
      * @var Connector
      */
-    protected $conn;
-
-    protected $readSock;
-
-    /**
-     * @var TransactionBoxInterface
-     */
-    protected $transBox;
-
-    /**
-     * @var resource
-     */
-    private $stream;
+    protected $connector;
 
     /**
      * @param LoopInterface $loop
@@ -109,9 +82,7 @@ class Database extends BaseEventEmitter implements DatabaseInterface
     {
         $this->loop = $loop;
         $this->config = $this->createConfig($config);
-        $this->conn = new Connector($this->config);
         $this->state = self::STATE_INIT;
-//        $this->transBox = $this->createTransactionBox();
     }
 
     /**
@@ -155,19 +126,20 @@ class Database extends BaseEventEmitter implements DatabaseInterface
      * @override
      * @inheritDoc
      */
-    public function start()
+    public function start($conn = 'default')
     {
         if ($this->isStarted())
         {
-            return Promise::doResolve($this->conn);
+            return Promise::doResolve($this->connector->getConnection());
         }
+        $this->connector = new Connector($this->config);
         $this->state = self::STATE_CONNECT_PENDING;
-        $promise = $this->conn->getConnection();
-        if (!($sock = $this->conn->getSock())) {
+        $promise = $this->connector->getConnection();
+        if (!($sock = $this->connector->getSock())) {
             throw new \Exception();
         }
-        $this->loop->addReadStream($sock, [$this->conn, 'connect']);
-        $this->loop->addWriteStream($sock, [$this->conn, 'connect']);
+        $this->loop->addReadStream($sock, [$this->connector, 'connect']);
+        $this->loop->addWriteStream($sock, [$this->connector, 'connect']);
 
         return $promise;
     }
@@ -196,134 +168,53 @@ class Database extends BaseEventEmitter implements DatabaseInterface
     }
 
     /**
-     * @override
      * @inheritDoc
      */
     public function getInfo()
     {
-        return $this->serverInfo;
+        // TODO: Implement getInfo() method.
     }
 
     /**
-     * @override
      * @inheritDoc
      */
     public function setDatabase($dbname)
     {
-        return $this->query(sprintf('USE `%s`', $dbname));
+        // TODO: Implement setDatabase() method.
     }
 
     /**
-     * @override
      * @inheritDoc
      */
     public function getDatabase()
     {
-        return pg_dbname($this->stream);
+        // TODO: Implement getDatabase() method.
     }
 
     /**
-     * @override
-     * @inheritDoc
-     */
-    public function query($sql, $sqlParams = [])
-    {
-        $query = new Deferred();
-        $promise = $query->getPromise();
-        //TODO: $query should be a QueryCommand object
-        $this->queue[] = $query;
-
-        return $promise;
-    }
-
-    /**
-     * @override
-     * @inheritDoc
-     */
-    public function execute($sql, $sqlParams = [])
-    {
-        $exec = new Deferred();
-        $promise = $exec->getPromise();
-        //TODO: $exec should be a ExecCommand object
-        $this->queue[] = $exec;
-
-        return $promise;
-    }
-
-    /**
-     * @override
-     * @inheritDoc
-     */
-    public function ping()
-    {
-        return Promise::doResolve(pg_ping($this->stream));
-    }
-
-    /**
-     * @override
      * @inheritDoc
      */
     public function beginTransaction()
     {
-        $trans = new Transaction($this);
-
-        $trans->on('commit', function(TransactionInterface $trans, array $queue) {
-            $this->commitTransaction($queue)->then(
-                function() use($trans) {
-                    return $trans->emit('success', [ $trans ]);
-                },
-                function($ex) use($trans) {
-                    return $trans->emit('error', [ $trans, $ex ]);
-                }
-            );
-            $this->transBox->remove($trans);
-        });
-        $trans->on('rollback', function(TransactionInterface $trans) {
-            $this->transBox->remove($trans);
-        });
-
-        return $this->transBox->add($trans);
+        // TODO: Implement beginTransaction() method.
     }
 
     /**
-     * @override
      * @inheritDoc
      */
     public function endTransaction(TransactionInterface $trans)
     {
-        return $trans->rollback();
+        // TODO: Implement endTransaction() method.
     }
 
     /**
-     * Try to commit a transaction.
-     *
-     * @param mixed[] $queue
-     * @return PromiseInterface
-     */
-    protected function commitTransaction($queue)
-    {
-        // TODO
-        return Promise::doReject(new ExecutionException('Not yet implemented.'));
-    }
-
-    /**
-     * @override
      * @inheritDoc
      */
     public function inTransaction()
     {
-        return !$this->transBox->isEmpty();
+        // TODO: Implement inTransaction() method.
     }
 
-    /**
-     * Create transaction box.
-     *
-     * @return TransactionBoxInterface
-     */
-    protected function createTransactionBox()
-    {
-        return new TransactionBox();
-    }
 
     /**
      * Create configuration file.
@@ -349,49 +240,5 @@ class Database extends BaseEventEmitter implements DatabaseInterface
         }
 
         return implode(' ', $config);
-    }
-
-    public function asyncConnProcedure()
-    {
-        switch (\pg_connect_poll($this->stream)) {
-            case \PGSQL_POLLING_FAILED:
-                return;
-            case \PGSQL_POLLING_OK:
-                if ($this->state < self::STATE_CONNECT_SUCCEEDED) {
-                    $this->state = self::STATE_CONNECT_SUCCEEDED;
-                    $this->conn->resolve($this->stream);
-                } else {
-                    $ret = pg_get_result($this->stream);
-                    if ($ret != false) {
-                        $stat = pg_result_status($ret, \PGSQL_STATUS_LONG);
-                        switch ($stat) {
-                            case PGSQL_TUPLES_OK:
-                                //TODO:
-                                var_dump(pg_fetch_row($ret));
-                                break;
-                            case PGSQL_COMMAND_OK:
-                                //TODO:
-                                var_export(pg_affected_rows($ret));
-                                break;
-                            case PGSQL_EMPTY_QUERY:
-                                break;
-                            case PGSQL_BAD_RESPONSE:
-                            case PGSQL_NONFATAL_ERROR:
-                            case PGSQL_FATAL_ERROR:
-                                throw new Exception(pg_last_error($this->stream));
-                                break;
-                            default:
-                                break;
-                        }
-                        die;
-                    }
-                }
-                return;
-            case \PGSQL_POLLING_ACTIVE:
-                return;
-
-            default:
-                return;
-        }
     }
 }

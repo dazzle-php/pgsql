@@ -2,7 +2,7 @@
 
 namespace Dazzle\PgSQL\Statement;
 
-interface QueryStatement
+interface QueryStatement extends Statement
 {
     public function getName();
     public function getSQL();

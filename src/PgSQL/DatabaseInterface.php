@@ -6,7 +6,7 @@ use Dazzle\Event\EventEmitterInterface;
 use Dazzle\Loop\LoopResourceInterface;
 use Dazzle\Promise\PromiseInterface;
 
-interface DatabaseInterface extends SQLClientInterface, LoopResourceInterface, EventEmitterInterface
+interface DatabaseInterface extends LoopResourceInterface, EventEmitterInterface
 {
     /**
      * Find out if the database has been started.

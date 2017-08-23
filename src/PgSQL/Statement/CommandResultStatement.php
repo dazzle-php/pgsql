@@ -2,7 +2,7 @@
 
 namespace Dazzle\PgSQL\Statement;
 
-interface CommandResultStatement
+interface CommandResultStatement extends Statement
 {
     public function getAffectedRows();
     public function getLastId();

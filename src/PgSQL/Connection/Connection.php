@@ -3,6 +3,7 @@
 namespace Dazzle\PgSQL\Connection;
 
 use Dazzle\Promise\Deferred;
+use Prophecy\Promise\PromiseInterface;
 
 class Connection extends Deferred implements ConnectionInterface
 {
@@ -26,25 +27,17 @@ class Connection extends Deferred implements ConnectionInterface
         return $this->connector->query($sql, $params);
     }
 
-    public function connect()
-    {
-        return $this->connector->connect();
-    }
-
     public function execute($sql, $params = [])
     {
-//        $stmt = new \Statement($sql, $params);
-
-//        return $this->connector->execute($stmt);
+        return $this->connector->execute($sql, $params = []);
     }
 
     /**
      * @param $sql
-     * @param array $params
-     * @return \QueryStatement
+     * @return PromiseInterface
      */
-    public function prepare($sql, $params = [])
+    public function prepare($sql)
     {
-        return new \Statement($sql, $params);
+        //todo:
     }
 }

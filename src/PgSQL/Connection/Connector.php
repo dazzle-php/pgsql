@@ -2,11 +2,11 @@
 
 namespace Dazzle\PgSQL\Connection;
 
+use Dazzle\PgSQL\Statement\Tuple;
 use Dazzle\Promise\Deferred;
-use Dazzle\Promise\Promise;
-use Dazzle\PgSQL\Statement\Statement;
+use Dazzle\PgSQL\Statement\Query;
+use Dazzle\PgSQL\Statement\CommandResult;
 use Dazzle\PgSQL\Statement\QueryStatement;
-use Dazzle\PgSQL\Statement\Result;
 use Dazzle\Throwable\Exception;
 
 class Connector implements ConnectorInterface
@@ -35,35 +35,6 @@ class Connector implements ConnectorInterface
         return $this->stream;
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function query($sql, $sqlParams = [])
-    {
-        $stmt = new Statement($sql, $sqlParams);
-        $deferred = new Deferred();
-        $promise = $deferred->getPromise();
-        $this->queryQueue[] = $stmt;
-        $this->retQueue[] = $deferred;
-
-        return $promise->success(function ($ret) {
-            return new Result($ret);
-        });
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function execute(QueryStatement $stmt)
-    {
-        //todo
-    }
-
-    protected function poll()
-    {
-        return \pg_connect_poll($this->stream);
-    }
-
     public function getSock()
     {
         return \pg_socket($this->stream);
@@ -71,6 +42,7 @@ class Connector implements ConnectorInterface
 
     public function getConnection()
     {
+        //rfc: could passed stream to each connection,add connection resolver and pool
         $connection = $this->conn;
 
         return $this->conn->getPromise()
@@ -78,7 +50,7 @@ class Connector implements ConnectorInterface
                 $connection->setConnector($connector);
 
                 return $connection;
-        });
+            });
     }
 
     public function connect()
@@ -122,6 +94,48 @@ class Connector implements ConnectorInterface
 
                 return;
         }
+    }
+
+    public function prepare($sql)
+    {
+        return $this->conn->prepare($sql);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function query($sql, $sqlParams = [])
+    {
+        $stmt = new Query($sql, $sqlParams);
+        $deferred = new Deferred();
+        $promise = $deferred->getPromise();
+        $this->queryQueue[] = $stmt;
+        $this->retQueue[] = $deferred;
+
+        return $promise->success(function ($ret) {
+            return new Tuple($ret);
+        });
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function execute($sql, $sqlParams = [])
+    {
+        $stmt = new Query($sql, $sqlParams);
+        $deferred = new Deferred();
+        $promise = $deferred->getPromise();
+        $this->queryQueue[] = $stmt;
+        $this->retQueue[] = $deferred;
+
+        return $promise->success(function ($ret) {
+            return new CommandResult($ret);
+        });
+    }
+
+    protected function poll()
+    {
+        return \pg_connect_poll($this->stream);
     }
 
     protected function isConnected()

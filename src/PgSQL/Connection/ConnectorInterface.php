@@ -19,10 +19,11 @@ interface ConnectorInterface
     /**
      * Execute an async query and return number of affected rows.
      *
-     * @param QueryStatement $stmt
+     * @param string $sql
+     * @param mixed[] $sqlParams
      * @return PromiseInterface
      */
-    public function execute(QueryStatement $stmt);
+    public function execute($sql, $sqlParams = []);
 
     /**
      * Get connection resource
