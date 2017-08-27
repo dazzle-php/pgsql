@@ -6,6 +6,7 @@ require_once __DIR__.'/../vendor/autoload.php';
 use Dazzle\Loop\Loop;
 use Dazzle\Loop\Model\SelectLoop;
 use Dazzle\PgSQL\Connection\Connection;
+use Dazzle\PgSQL\Statement\Prepare;
 use Dazzle\PgSQL\Statement\Tuple;
 use Dazzle\Throwable\Test\TModule;
 use Dazzle\PgSQL\Database;
@@ -31,9 +32,15 @@ $db = new Database($loop, [
 ]);
 
 $db->start()->then(function (Connection $conn) use ($loop) {
-    $conn->query('select \'ok\'')->then(function (Tuple $ret) use ($loop) {
-        print_r($ret->fetchRow());
-        $loop->stop();
+//     $conn->query('select \'ok\'')->then(function (Tuple $ret) use ($loop) {
+//         print_r($ret->fetchRow());
+//         $loop->stop();
+//     });
+    $conn->prepare('select \'ok\'')->then(function (Prepare $prepare) use ($loop) {
+        $prepare->execute()->then(function ($row) use ($loop) {
+            var_export($row);
+            $loop->stop();
+        });
     });
 });
 

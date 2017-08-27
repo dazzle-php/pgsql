@@ -9,12 +9,6 @@ class Query implements QueryStatement
     {
         $this->sql = $sql;
         $this->params = $params;
-        $this->name = $this->generateName();
-    }
-
-    public function getName()
-    {
-        return $this->name;
     }
 
     public function getSQL()
@@ -26,15 +20,4 @@ class Query implements QueryStatement
     {
         return $this->params;
     }
-
-    private function generateName($length = 6)
-    {
-        $id = md5(microtime());
-        $size = strlen($id);
-        $offset = mt_rand(0, $size - $length);
-        $end = mt_rand($offset + $length, $size);
-
-        return substr($id, $offset, $end);
-    }
-
 }

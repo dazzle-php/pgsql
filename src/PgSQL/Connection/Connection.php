@@ -38,6 +38,6 @@ class Connection extends Deferred implements ConnectionInterface
      */
     public function prepare($sql)
     {
-        //todo:
+        return $this->connector->prepare($sql);
     }
 }
