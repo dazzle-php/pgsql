@@ -3,7 +3,7 @@
 namespace Dazzle\PgSQL\Connection;
 
 use Dazzle\Promise\Deferred;
-use Prophecy\Promise\PromiseInterface;
+use Dazzle\Promise\PromiseInterface;
 
 class Connection extends Deferred implements ConnectionInterface
 {

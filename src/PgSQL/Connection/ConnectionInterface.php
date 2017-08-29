@@ -19,4 +19,10 @@ interface ConnectionInterface
      * @return PromiseInterface
      */
     public function execute($sql, $params = []);
+
+    /**
+     * @param $sql
+     * @return PromiseInterface
+     */
+    public function prepare($sql);
 }

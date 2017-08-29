@@ -2,7 +2,7 @@
 
 namespace Dazzle\PgSQL\Connection;
 
-use Dazzle\PgSQL\Statement\QueryStatement;
+use Dazzle\PgSQL\Statement\Statement;
 use Dazzle\Promise\PromiseInterface;
 
 interface ConnectorInterface
@@ -27,11 +27,23 @@ interface ConnectorInterface
 
     /**
      * Get connection resource
-     * @return mixed
+     * @return resource
      */
     public function getStream();
 
+    /**
+     * @return mixed
+     */
     public function connect();
 
+    /**
+     * @return resource
+     */
     public function getSock();
+
+    /**
+     * @param Statement $stmt
+     * @return
+     */
+    public function appendQuery(Statement $stmt);
 }

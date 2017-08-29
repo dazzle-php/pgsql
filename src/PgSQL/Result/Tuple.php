@@ -1,11 +1,11 @@
 <?php
 
-namespace Dazzle\PgSQL\Statement;
+namespace Dazzle\PgSQL\Result;
 
 class Tuple implements TupleResultStatement
 {
 
-    use StatementTrait;
+    use ResultAwareTrait;
 
     public function __construct($ret)
     {

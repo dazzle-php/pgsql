@@ -1,7 +1,7 @@
 <?php
-namespace Dazzle\PgSQL\Statement;
+namespace Dazzle\PgSQL\Result;
 
-interface TupleResultStatement extends Statement
+interface TupleResultStatement
 {
     public function fetchColumn();
     public function fetchRow();

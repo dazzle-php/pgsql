@@ -1,9 +1,15 @@
 <?php
 namespace Dazzle\PgSQL\Statement;
 
-interface Statement
+use Dazzle\PgSQL\Connection\ConnectorInterface;
+use Dazzle\Promise\DeferredInterface;
+
+interface Statement extends DeferredInterface
 {
-    public function getResult();
-    public function setResult($ret);
-    public function getStatus();
+    public function getSQL();
+    public function setSQL($sql);
+    public function getParams();
+    public function setParams(array $params);
+    public function execute(ConnectorInterface $connector);
+    public function handle($result);
 }

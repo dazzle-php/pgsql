@@ -1,8 +1,8 @@
 <?php
 
-namespace Dazzle\PgSQL\Statement;
+namespace Dazzle\PgSQL\Result;
 
-trait StatementTrait
+trait ResultAwareTrait
 {
     protected $ret;
 

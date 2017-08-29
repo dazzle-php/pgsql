@@ -1,12 +1,12 @@
 <?php
-
 namespace Dazzle\PgSQL\Statement;
+
+use Dazzle\Promise\PromiseInterface;
 
 interface PreparedStatement extends Statement
 {
-    public function execute();
-
-    public function getName();
-
-    public function getParams();
+    /**
+     * @return PromiseInterface
+     */
+    public function execPreparedStmt();
 }
