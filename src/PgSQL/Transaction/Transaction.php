@@ -2,9 +2,10 @@
 namespace Dazzle\PgSQL\Transaction;
 
 use Dazzle\Event\BaseEventEmitter;
+use Dazzle\Event\EventEmitterInterface;
+use Dazzle\PgSQL\Result\CommandResultStatement;
 use Dazzle\Promise\Promise;
-use Dazzle\Promise\PromiseInterface;
-use Dazzle\Throwable\Exception\Runtime\ExecutionException;
+use Dazzle\PgSQL\Connection\ConnectorInterface;
 
 class Transaction extends BaseEventEmitter implements TransactionInterface
 {
@@ -14,23 +15,19 @@ class Transaction extends BaseEventEmitter implements TransactionInterface
     protected $connector;
 
     /**
-     * @var mixed[]
-     */
-    protected $queue;
-
-    /**
      * @var bool
      */
     protected $open;
 
     /**
-     * @param DatabaseInterface $database
+     * @param ConnectorInterface $connector
+     * @param EventEmitterInterface $emitter
      */
-    public function __construct(ConnectorInterface $connector)
+    public function __construct(ConnectorInterface $connector, EventEmitterInterface $emitter)
     {
         $this->connector = $connector;
-        $this->queue = [];
-        $this->open = true;
+        $this->emitter = $emitter;
+        $this->open = false;
     }
 
     /**
@@ -62,7 +59,18 @@ class Transaction extends BaseEventEmitter implements TransactionInterface
 
     public function begin()
     {
-        return $this->connector->execute('begin');
+        if ($this->isOpen()) {
+            return Promise::doResolve($this);
+        }
+
+        return $this->connector->execute('begin')->success(function (CommandResultStatement $result) {
+
+            if ($result) {
+                $this->emitter->emit('transaction:begin');
+            }
+
+            return $this;
+        });
     }
 
     /**
@@ -71,7 +79,13 @@ class Transaction extends BaseEventEmitter implements TransactionInterface
      */
     public function commit()
     {
-       return $this->connector->execute('commit');
+       return $this->connector->execute('commit')->success(function (CommandResultStatement $result) {
+           if ($result) {
+               $this->emitter->emit('transaction:end');
+           }
+
+           return $result;
+       });
     }
 
     /**
@@ -80,6 +94,12 @@ class Transaction extends BaseEventEmitter implements TransactionInterface
      */
     public function rollback()
     {
-       return $this->connector->execute('rollback');
+       return $this->connector->execute('rollback')->success(function (CommandResultStatement $result) {
+           if ($result) {
+               $this->emitter->emit('transaction:end');
+           }
+
+           return $result;
+       });
     }
 }

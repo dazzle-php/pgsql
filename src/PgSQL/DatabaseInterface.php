@@ -4,6 +4,7 @@ namespace Dazzle\PgSQL;
 use Dazzle\Event\EventEmitterInterface;
 use Dazzle\Loop\LoopResourceInterface;
 use Dazzle\Promise\PromiseInterface;
+use Dazzle\PgSQL\Transaction\TransactionInterface;
 
 interface DatabaseInterface extends LoopResourceInterface, EventEmitterInterface
 {

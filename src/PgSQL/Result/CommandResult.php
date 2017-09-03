@@ -4,6 +4,11 @@ namespace Dazzle\PgSQL\Result;
 class CommandResult implements CommandResultStatement
 {
     use ResultAwareTrait;
+
+    public function __construct($ret)
+    {
+        $this->ret = $ret;
+    }
     
     public function getAffectedRows()
     {

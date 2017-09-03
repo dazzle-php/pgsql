@@ -7,6 +7,7 @@ use Dazzle\Promise\Deferred;
 class Query extends Deferred implements Statement
 {
     use StatementAwareTrait;
+    use StatementHandlerTrait;
 
     public function __construct($sql, array $params = [])
     {

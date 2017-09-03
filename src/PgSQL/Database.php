@@ -5,8 +5,10 @@ use Dazzle\Event\BaseEventEmitter;
 use Dazzle\Loop\LoopAwareTrait;
 use Dazzle\Loop\LoopInterface;
 use Dazzle\PgSQL\Connection\Connector;
+use Dazzle\PgSQL\Transaction\Transaction;
 use Dazzle\Promise\Promise;
 use Dazzle\Throwable\Exception;
+use Dazzle\PgSQL\Transaction\TransactionInterface ;
 use Dazzle\Throwable\Exception\Runtime\ExecutionException;
 
 class Database extends BaseEventEmitter implements DatabaseInterface
@@ -135,7 +137,7 @@ class Database extends BaseEventEmitter implements DatabaseInterface
         $this->state = self::STATE_CONNECT_PENDING;
         $promise = $this->connector->getConnection();
         if (!($sock = $this->connector->getSock())) {
-            throw new \Exception();
+            return $promise->reject(new Exception('No server connection is currently open'));
         }
         $this->loop->addReadStream($sock, [$this->connector, 'connect']);
         $this->loop->addWriteStream($sock, [$this->connector, 'connect']);
@@ -195,7 +197,14 @@ class Database extends BaseEventEmitter implements DatabaseInterface
      */
     public function beginTransaction()
     {
-        // TODO: Implement beginTransaction() method.
+        $trans = new Transaction($this->connector, $this);
+        if ($this->isStarted()) {
+            return Promise::doResolve($trans);
+        }
+        //bad method: append 1 callback
+        return $this->start()->success(function ($_) use ($trans) {
+            return $trans;
+        });
     }
 
     /**
@@ -212,6 +221,11 @@ class Database extends BaseEventEmitter implements DatabaseInterface
     public function inTransaction()
     {
         // TODO: Implement inTransaction() method.
+    }
+
+    public function getConnection()
+    {
+        return $this->connector->getConnection();
     }
 
 

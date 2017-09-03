@@ -24,4 +24,9 @@ interface ConnectionInterface
      * @return PromiseInterface
      */
     public function prepare($sql);
+
+    /**
+     * @return PromiseInterface
+     */
+    public function beginTransaction();
 }

@@ -45,7 +45,7 @@ class Connection extends Deferred implements ConnectionInterface
     public function beginTransaction()
     {
         $transac = new Transaction($this->connector);
-
+        
         return $transac->begin();
     }
 }

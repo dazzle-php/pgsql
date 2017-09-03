@@ -16,7 +16,7 @@ class Connector implements ConnectorInterface
     protected $retQueue;
 
     /**
-     * @var Deferred
+     * @var Connection $conn
      */
     protected $conn;
 
@@ -42,13 +42,14 @@ class Connector implements ConnectorInterface
     {
         //rfc: could passed stream to each connection,add connection resolver and pool
         $connection = $this->conn;
+        $promise = $this->conn->getPromise();
 
-        return $this->conn->getPromise()
-            ->success(function (ConnectorInterface $connector) use ($connection) {
-                $connection->setConnector($connector);
+        return $promise
+               ->success(function (ConnectorInterface $connector) use ($connection) {
+                   $connection->setConnector($connector);
 
-                return $connection;
-            });
+                   return $connection;
+               });
     }
 
     public function connect()

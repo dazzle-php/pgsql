@@ -7,6 +7,7 @@ use Dazzle\Promise\Deferred;
 class Prepared extends Deferred implements PreparedStatement
 {
     use StatementAwareTrait;
+    use StatementHandlerTrait;
 
     protected $prepare;
 
