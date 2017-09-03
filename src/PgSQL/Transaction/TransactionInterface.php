@@ -1,8 +1,8 @@
 <?php
-
-namespace Dazzle\PgSQL;
+namespace Dazzle\PgSQL\Transaction;
 
 use Dazzle\Event\EventEmitterInterface;
+use Dazzle\PgSQL\Statement\StatementHandler;
 
 interface TransactionInterface extends EventEmitterInterface
 {

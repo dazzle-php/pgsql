@@ -1,5 +1,4 @@
 <?php
-
 namespace Dazzle\PgSQL\Statement;
 
 use Dazzle\PgSQL\Connection\ConnectorInterface;

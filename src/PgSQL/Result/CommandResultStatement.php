@@ -1,5 +1,4 @@
 <?php
-
 namespace Dazzle\PgSQL\Result;
 
 interface CommandResultStatement

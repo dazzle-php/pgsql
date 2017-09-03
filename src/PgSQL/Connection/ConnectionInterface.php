@@ -1,5 +1,4 @@
 <?php
-
 namespace Dazzle\PgSQL\Connection;
 
 use Dazzle\Promise\PromiseInterface;

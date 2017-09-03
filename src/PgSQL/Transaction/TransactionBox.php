@@ -1,5 +1,4 @@
 <?php
-
 namespace Dazzle\PgSQL\Transaction;
 
 use Dazzle\PgSQL\TransactionInterface;

@@ -1,5 +1,4 @@
 <?php
-
 namespace Dazzle\PgSQL;
 
 use Dazzle\Event\EventEmitterInterface;
