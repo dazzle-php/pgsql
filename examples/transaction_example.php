@@ -29,19 +29,17 @@ $db->on('transaction:end', function () use ($loop, $db) {
     });
 });
 
-$db->start()->then(function (ConnectionInterface $conn) use ($loop, $db) {
-    $db->beginTransaction()
-     ->then(function (TransactionInterface $trans) use ($loop) {
-        $trans->query('select * from demo order by id desc limit 1')
-        ->then(function (TupleResultStatement $tuple) {
-            print_r($tuple->fetchAll());
-        });
-        $trans->execute('insert into demo default values')
-        ->then(function (CommandResult $result) {
-            print_r($result->getAffectedRows());
-        });
-        $trans->rollback();
+$db->beginTransaction()
+ ->then(function (TransactionInterface $trans) use ($loop) {
+    $trans->query('select * from demo order by id desc limit 1')
+    ->then(function (TupleResultStatement $tuple) {
+        print_r($tuple->fetchAll());
     });
+    $trans->execute('insert into demo default values')
+    ->then(function (CommandResult $result) {
+        print_r($result->getAffectedRows());
+    });
+    $trans->rollback();
 });
 
 $loop->start();

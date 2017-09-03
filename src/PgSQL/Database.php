@@ -197,12 +197,15 @@ class Database extends BaseEventEmitter implements DatabaseInterface
      */
     public function beginTransaction()
     {
-        $trans = new Transaction($this->connector, $this);
         if ($this->isStarted()) {
+            $trans = new Transaction($this->connector, $this);
+
             return Promise::doResolve($trans);
         }
         //bad method: append 1 callback
-        return $this->start()->success(function ($_) use ($trans) {
+        return $this->start()->success(function ($_) {
+            $trans = new Transaction($this->connector, $this);
+
             return $trans;
         });
     }
