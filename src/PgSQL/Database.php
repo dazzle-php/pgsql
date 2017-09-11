@@ -206,7 +206,7 @@ class Database extends BaseEventEmitter implements DatabaseInterface
         return $this->start()->success(function ($_) {
             $trans = new Transaction($this->connector, $this);
 
-            return $trans;
+            return $trans->begin();
         });
     }
 

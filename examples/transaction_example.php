@@ -18,13 +18,17 @@ $db = new Database($loop, [
     'dbname' => 'postgres'
 ]);
 
+$db->on('transaction:begin', function () use ($loop, $db) {
+    echo 'Transaction Stated'.PHP_EOL;
+});
+
 $db->on('transaction:end', function () use ($loop, $db) {
-    echo 'event';
     $db->getConnection()->then(function (ConnectionInterface $conn) use ($loop) {
         $conn->query('select * from demo order by id desc limit 1')
         ->then(function (TupleResultStatement $tuple) use ($loop) {
             print_r($tuple->fetchAll());
             $loop->stop();
+            echo 'Transaction End'.PHP_EOL;
         });
     });
 });
@@ -36,10 +40,12 @@ $db->beginTransaction()
         print_r($tuple->fetchAll());
     });
     $trans->execute('insert into demo default values')
-    ->then(function (CommandResult $result) {
-        print_r($result->getAffectedRows());
+    ->then(function (CommandResult $result) use ($trans) {
+        if ($result->getAffectedRows() > 0) {
+            $trans->rollback();
+        }
     });
-    $trans->rollback();
+    
 });
 
 $loop->start();

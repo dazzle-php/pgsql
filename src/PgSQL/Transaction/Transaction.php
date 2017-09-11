@@ -63,8 +63,7 @@ class Transaction extends BaseEventEmitter implements TransactionInterface
             return Promise::doResolve($this);
         }
 
-        return $this->connector->execute('begin')->success(function (CommandResultStatement $result) {
-
+        return $this->connector->execute('BEGIN')->success(function (CommandResultStatement $result) {
             if ($result) {
                 $this->emitter->emit('transaction:begin');
             }
@@ -79,7 +78,7 @@ class Transaction extends BaseEventEmitter implements TransactionInterface
      */
     public function commit()
     {
-       return $this->connector->execute('commit')->success(function (CommandResultStatement $result) {
+       return $this->connector->execute('COMMIT')->success(function (CommandResultStatement $result) {
            if ($result) {
                $this->emitter->emit('transaction:end');
            }
@@ -94,9 +93,9 @@ class Transaction extends BaseEventEmitter implements TransactionInterface
      */
     public function rollback()
     {
-       return $this->connector->execute('rollback')->success(function (CommandResultStatement $result) {
+       return $this->connector->execute('ROLLBACK')->success(function (CommandResultStatement $result) {
            if ($result) {
-               $this->emitter->emit('transaction:end');
+               $this->emitter->emit('transaction:end');    
            }
 
            return $result;
